@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Score Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Very light green background */
+        }
+        /* Custom styles for subtle animations/transitions */
+        .form-input {
+            transition: all 0.2s ease-in-out;
+        }
+        .form-input:focus {
+            border-color: #10b981; /* Tailwind emerald-500 */
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        .form-button {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .form-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .score-display-card {
+            transition: all 0.5s ease-out;
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        .score-display-card.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 space-y-6 border border-gray-100">
+
+        <!-- Header -->
+        <h1 class="text-4xl font-extrabold text-center text-emerald-700 mb-6">
+            Cricket Score Tracker
+        </h1>
+
+        <!-- Input Section -->
+        <div class="space-y-4">
+            <div>
+                <label for="runsInput" class="block text-sm font-medium text-gray-700 mb-1">Runs on this ball (0, 2, 3, 4, 5, 6 or 1 for OUT)</label>
+                <input type="number" id="runsInput" name="runsInput" placeholder="Enter runs (0-6, 1 for OUT)" min="0" max="6"
+                       class="form-input mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 text-gray-900" required>
+            </div>
+            <button id="addBallBtn"
+                    class="form-button w-full bg-emerald-600 text-white py-3 px-4 rounded-md font-semibold shadow-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition duration-300 ease-in-out">
+                Add Ball
+            </button>
+        </div>
+
+        <!-- Status Message Display -->
+        <div id="statusMessage" class="hidden bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-md relative" role="alert">
+            <span class="block sm:inline" id="statusText"></span>
+        </div>
+
+        <!-- Out Message Display -->
+        <div id="outMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative" role="alert">
+            <strong class="font-bold">OUT!</strong>
+            <span class="block sm:inline ml-2">Player is out. Game over.</span>
+        </div>
+
+        <!-- Error Message Display -->
+        <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline" id="errorText"></span>
+        </div>
+
+        <!-- Score Display Section -->
+        <div id="scoreOutput" class="score-display-card hidden mt-8 p-6 bg-emerald-50 rounded-xl shadow-inner border border-emerald-200 text-center">
+            <h2 class="text-2xl font-bold text-emerald-800 mb-4 border-b-2 pb-2 border-emerald-300">
+                Current Score
+            </h2>
+            <div class="grid grid-cols-2 gap-4 text-gray-800 font-semibold text-xl">
+                <div class="p-3 bg-white rounded-lg shadow-sm">
+                    <p class="text-sm text-gray-600">Total Runs</p>
+                    <p id="totalRunsDisplay" class="text-3xl text-emerald-900 font-extrabold mt-1">0</p>
+                </div>
+                <div class="p-3 bg-white rounded-lg shadow-sm">
+                    <p class="text-sm text-gray-600">Balls Played</p>
+                    <p id="totalBallsDisplay" class="text-3xl text-emerald-900 font-extrabold mt-1">0</p>
+                </div>
+            </div>
+            <button id="resetBtn"
+                    class="form-button w-full bg-gray-300 text-gray-800 py-2 px-4 rounded-md font-semibold shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 mt-6">
+                Reset Game
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        let totalRuns = 0;
+        let totalBalls = 0;
+        let isPlayerOut = false;
+
+        const runsInput = document.getElementById('runsInput');
+        const addBallBtn = document.getElementById('addBallBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const totalRunsDisplay = document.getElementById('totalRunsDisplay');
+        const totalBallsDisplay = document.getElementById('totalBallsDisplay');
+        const statusMessageDiv = document.getElementById('statusMessage');
+        const statusTextSpan = document.getElementById('statusText');
+        const outMessageDiv = document.getElementById('outMessage');
+        const errorMessageDiv = document.getElementById('errorMessage');
+        const errorTextSpan = document.getElementById('errorText');
+        const scoreOutputDiv = document.getElementById('scoreOutput');
+
+        // Function to update the score display
+        function updateScoreDisplay() {
+            totalRunsDisplay.textContent = totalRuns;
+            totalBallsDisplay.textContent = totalBalls;
+            scoreOutputDiv.classList.remove('hidden');
+            void scoreOutputDiv.offsetWidth; // Trigger reflow for animation
+            scoreOutputDiv.classList.add('show');
+        }
+
+        // Function to reset the game
+        function resetGame() {
+            totalRuns = 0;
+            totalBalls = 0;
+            isPlayerOut = false;
+            runsInput.value = ''; // Clear input field
+            runsInput.disabled = false; // Enable input
+            addBallBtn.disabled = false; // Enable button
+            outMessageDiv.classList.add('hidden'); // Hide out message
+            statusMessageDiv.classList.add('hidden'); // Hide status message
+            errorMessageDiv.classList.add('hidden'); // Hide error message
+            scoreOutputDiv.classList.remove('show');
+            scoreOutputDiv.classList.add('hidden'); // Hide score display
+            updateScoreDisplay(); // Reset display to 0
+        }
+
+        // Event Listener for Add Ball Button
+        addBallBtn.addEventListener('click', function() {
+            if (isPlayerOut) {
+                statusTextSpan.textContent = "Player is already out. Please reset the game.";
+                statusMessageDiv.classList.remove('hidden');
+                return;
+            }
+
+            const runsStr = runsInput.value.trim();
+            errorMessageDiv.classList.add('hidden'); // Hide previous errors
+            statusMessageDiv.classList.add('hidden'); // Hide previous status
+
+            if (runsStr === '') {
+                errorTextSpan.textContent = "Please enter runs for the ball.";
+                errorMessageDiv.classList.remove('hidden');
+                return;
+            }
+
+            const runs = parseInt(runsStr);
+
+            // Basic validation for runs (0-6, or 1 for out)
+            if (isNaN(runs) || runs < 0 || runs > 6) {
+                errorTextSpan.textContent = "Invalid runs. Please enter a number between 0 and 6.";
+                errorMessageDiv.classList.remove('hidden');
+                return;
+            }
+
+            totalBalls++; // Increment balls played for every valid input
+
+            if (runs === 1) { // Special condition: 1 run means out
+                isPlayerOut = true;
+                outMessageDiv.classList.remove('hidden'); // Show out message
+                runsInput.disabled = true; // Disable further input
+                addBallBtn.disabled = true; // Disable button
+                totalRuns += runs; // Add the run before declaring out
+            } else {
+                totalRuns += runs;
+                statusTextSpan.textContent = `Scored ${runs} runs on this ball.`;
+                statusMessageDiv.classList.remove('hidden');
+            }
+
+            runsInput.value = ''; // Clear input for next ball
+            updateScoreDisplay(); // Update the displayed score
+        });
+
+        // Event Listener for Reset Button
+        resetBtn.addEventListener('click', resetGame);
+
+        // Initialize display on load
+        updateScoreDisplay();
+    </script>
+</body>
+</html>
